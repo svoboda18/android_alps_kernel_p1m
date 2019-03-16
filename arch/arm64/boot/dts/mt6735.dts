@@ -1008,6 +1008,13 @@ initrd=0x44000000,0x300000 loglevel=8 androidboot.hardware=mt6735";
 			clock-names = "uart4-main";
 		};
 
+		ncp1854@0X36 {
+			compatible = "mediatek,ncp1854", "mediatek,ncp1851";
+			reg = <0x36>;
+			status = "okay";
+ 		};
+
+
 		i2c3:i2c@1100f000 {
 			compatible = "mediatek,mt6735-i2c";
 			cell-index = <3>;

@@ -1,16 +1,3 @@
-/*
- * Copyright (C) 2015 MediaTek Inc.
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- */
-
 #include <linux/types.h>
 
 #include <mt-plat/charging.h>
@@ -213,7 +200,7 @@ static unsigned int charging_hw_init(void *data)
 	if (batt_cust_data.high_battery_voltage_support)
 		pmic_set_register_value(PMIC_RG_VBAT_OV_VTH, 3);	/* VBAT_OV_VTH, 4.4V, */
 	else
-		pmic_set_register_value(PMIC_RG_VBAT_OV_VTH, 2);	/* VBAT_OV_VTH, 4.3V, */
+		pmic_set_register_value(PMIC_RG_VBAT_OV_VTH, 1);	/* VBAT_OV_VTH, 4.3V, */
 
 	pmic_set_register_value(PMIC_RG_BATON_EN, 1);	/* BATON_EN */
 
@@ -245,19 +232,16 @@ static unsigned int charging_hw_init(void *data)
 static unsigned int charging_dump_register(void *data)
 {
 	unsigned int status = STATUS_OK;
+
+	unsigned int reg_val = 0;
 	unsigned int i = 0;
 
-	if (Enable_BATDRV_LOG >= BAT_LOG_FULL) {
-		for (i = MT6328_CHR_CON0; i <= MT6328_CHR_CON40; i += 10) {
-			battery_log(BAT_LOG_CRTI,
-				    "[0x%x]=0x%x,[0x%x]=0x%x,[0x%x]=0x%x,[0x%x]=0x%x,[0x%x]=0x%x\n",
-				    i, upmu_get_reg_value(i),
-				    i + 2, upmu_get_reg_value(i + 2),
-				    i + 4, upmu_get_reg_value(i + 4),
-				    i + 6, upmu_get_reg_value(i + 6),
-				    i + 8, upmu_get_reg_value(i + 8));
-		}
+	for (i = MT6328_CHR_CON0; i <= MT6328_CHR_CON40; i += 2) {
+		reg_val = upmu_get_reg_value(i);
+		battery_log(BAT_LOG_CRTI, "[0x%x]=0x%x,", i, reg_val);
 	}
+
+	battery_log(BAT_LOG_CRTI, "\n");
 
 	return status;
 }
@@ -286,6 +270,10 @@ static unsigned int charging_enable(void *data)
 
 		pmic_set_register_value(PMIC_RG_CSDAC_MODE, 1);	/* CSDAC_MODE */
 		pmic_set_register_value(PMIC_RG_CSDAC_EN, 1);	/* CSDAC_EN */
+
+
+		if (Enable_BATDRV_LOG == BAT_LOG_FULL)
+			charging_dump_register(NULL);
 	} else {
 		pmic_set_register_value(PMIC_RG_CHRWDT_INT_EN, 0);	/* CHRWDT_INT_EN */
 		pmic_set_register_value(PMIC_RG_CHRWDT_EN, 0);	/* CHRWDT_EN */
@@ -297,6 +285,7 @@ static unsigned int charging_enable(void *data)
 	return status;
 }
 
+BATTERY_VOLTAGE_ENUM cv_voltage=BATTERY_VOLT_04_200000_V;
 
 static unsigned int charging_set_cv_voltage(void *data)
 {
@@ -306,6 +295,7 @@ static unsigned int charging_set_cv_voltage(void *data)
 	register_value =
 	    charging_parameter_to_value(VBAT_CV_VTH, GETARRAYNUM(VBAT_CV_VTH),
 					*(unsigned int *) (data));
+    cv_voltage=VBAT_CV_VTH[register_value];
 
 	pmic_set_register_value(PMIC_RG_VBAT_CV_VTH, register_value);
 
@@ -437,7 +427,7 @@ static unsigned int charging_get_charger_det_status(void *data)
 	*(kal_bool *) (data) = 1;
 	battery_log(BAT_LOG_CRTI, "chr exist for fpga\n");
 #else
-	*(kal_bool *) (data) = pmic_get_register_value_nolock(PMIC_RGS_CHRDET);
+	*(kal_bool *) (data) = pmic_get_register_value(PMIC_RGS_CHRDET);
 #endif
 
 	return status;
@@ -705,18 +695,10 @@ signed int chr_control_interface(CHARGING_CTRL_CMD cmd, void *data)
 		charging_func[CHARGING_CMD_SET_ERROR_STATE] = charging_set_error_state;
 	}
 
-	if (cmd < CHARGING_CMD_NUMBER) {
-		if (charging_func[cmd] != NULL)
-			status = charging_func[cmd] (data);
-		else {
-			battery_log(BAT_LOG_CRTI,
-				    "[chr_control_interface] cmd:%d does not support\n", cmd);
-			return STATUS_UNSUPPORTED;
-		}
-	} else {
-		battery_log(BAT_LOG_CRTI, "[chr_control_interface] cmd:%d is not legal\n", cmd);
+	if (cmd < CHARGING_CMD_NUMBER)
+		status = charging_func[cmd] (data);
+	else
 		return STATUS_UNSUPPORTED;
-	}
 
 	return status;
 }

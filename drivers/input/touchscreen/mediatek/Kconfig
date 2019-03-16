@@ -199,4 +199,18 @@ config TOUCHSCREEN_LGE_FT8707
 	  connected to your system.
 	  To compile this dirver as a module, choose M here: the
 	  module will be called.
+
+config TOUCHSCREEN_MTK_FT5446
+	bool "FT5446 for Mediatek package"
+	default n
+	help
+	  Say Y here if you have FT5446 touch panel.
+
+	  If unsure, say N.
+
+	  To compile this dirver as a module, choose M here: the
+	  module will be called.
+
+source "drivers/input/touchscreen/mediatek/FT5446/Kconfig"
+
 endif

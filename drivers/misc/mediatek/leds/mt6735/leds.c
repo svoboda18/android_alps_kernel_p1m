@@ -29,6 +29,10 @@
 #include <linux/wakelock.h>
 #include <linux/slab.h>
 #include <linux/delay.h>
+
+#include "lcm_drv.h"
+extern LCM_DRIVER  *lcm_drv;
+
 /* #include <mach/mt_pwm.h>
 #include <mach/upmu_common_sw.h>
 #include <mach/upmu_common.h>
@@ -747,8 +751,8 @@ int mt_brightness_set_pmic(enum mt65xx_led_pmic pmic_type, u32 level, u32 div)
 		pmic_set_register_value(PMIC_RG_DRV_ISINK0_CK_PDN, 0);
 		pmic_set_register_value(PMIC_RG_DRV_ISINK0_CK_CKSEL, 0);
 		pmic_set_register_value(PMIC_ISINK_CH0_MODE, ISINK_PWM_MODE);
-		pmic_set_register_value(PMIC_ISINK_CH0_STEP, ISINK_3);	/* 16mA */
-		pmic_set_register_value(PMIC_ISINK_DIM0_DUTY, 15);
+		pmic_set_register_value(PMIC_ISINK_CH0_STEP, ISINK_5);	/* 24mA */
+		pmic_set_register_value(PMIC_ISINK_DIM0_DUTY, 31);
 		pmic_set_register_value(PMIC_ISINK_DIM0_FSEL, ISINK_1KHZ);	/* 1KHz */
 		if (level)
 			pmic_set_register_value(PMIC_ISINK_CH0_EN, NLED_ON);
@@ -774,9 +778,15 @@ int mt_brightness_set_pmic(enum mt65xx_led_pmic pmic_type, u32 level, u32 div)
 		pmic_set_register_value(PMIC_RG_DRV_ISINK1_CK_PDN, 0);
 		pmic_set_register_value(PMIC_RG_DRV_ISINK1_CK_CKSEL, 0);
 		pmic_set_register_value(PMIC_ISINK_CH1_MODE, ISINK_PWM_MODE);
-		pmic_set_register_value(PMIC_ISINK_CH1_STEP, ISINK_3);	/* 16mA */
+		pmic_set_register_value(PMIC_ISINK_CH1_STEP,ISINK_1);//8mA guanyuwei@wt modify the current of isink1 for green led
+		pmic_set_register_value(PMIC_ISINK_BREATH1_TR1_SEL,0x02); //0.523s
+		pmic_set_register_value(PMIC_ISINK_BREATH1_TR2_SEL,0x02); //0.523s
+		pmic_set_register_value(PMIC_ISINK_BREATH1_TF1_SEL,0x02); //0.523s
+		pmic_set_register_value(PMIC_ISINK_BREATH1_TF2_SEL,0x02); //0.523s
+		pmic_set_register_value(PMIC_ISINK_BREATH1_TON_SEL,0x02); //0.523s
+		pmic_set_register_value(PMIC_ISINK_BREATH1_TOFF_SEL,0x04); //1.845s
 		pmic_set_register_value(PMIC_ISINK_DIM1_DUTY, 15);
-		pmic_set_register_value(PMIC_ISINK_DIM1_FSEL, ISINK_1KHZ);	/* 1KHz */
+		pmic_set_register_value(PMIC_ISINK_DIM1_FSEL, ISINK_02HZ);	/* 0.2KHz */
 		if (level)
 			pmic_set_register_value(PMIC_ISINK_CH1_EN, NLED_ON);
 		else
@@ -793,6 +803,11 @@ int mt_brightness_set_pmic_duty_store(u32 level, u32 div)
 	return -1;
 }
 
+#ifdef CONFIG_WT_BACKLIGHT_DISABLE_WITH_NOLCM
+ extern int lcm_connected;
+#endif
+int lcd_backlight_off =0;
+
 int mt_mt65xx_led_set_cust(struct cust_mt65xx_led *cust, int level)
 {
 	struct nled_setting led_tmp_setting = { 0, 0, 0 };
@@ -801,6 +816,24 @@ int mt_mt65xx_led_set_cust(struct cust_mt65xx_led *cust, int level)
 	unsigned int BacklightLevelSupport =
 	    Cust_GetBacklightLevelSupport_byPWM();
 
+#ifdef CONFIG_WT_BACKLIGHT_DISABLE_WITH_NOLCM
+
+            LEDS_DEBUG("zhengzhou [LED] lcm_connected ==%d\n",lcm_connected); 
+
+           if(lcm_connected == 0) level = 0;
+#endif
+  if(strcmp(cust->name, "lcd-backlight") == 0)
+  {
+	if(level !=0)
+	{
+		lcd_backlight_off = 0 ;
+	}
+	else
+	{
+		lcd_backlight_off = 1 ;
+
+	}
+  }
 	switch (cust->mode) {
 
 	case MT65XX_LED_MODE_PWM:
@@ -814,6 +847,13 @@ int mt_mt65xx_led_set_cust(struct cust_mt65xx_led *cust, int level)
 
 				if (BacklightLevelSupport ==
 				    BACKLIGHT_LEVEL_PWM_256_SUPPORT)
+#ifdef CONFIG_WT_BRIGHTNESS_MAPPING_WITH_LCM
+						if(NULL != lcm_drv && NULL != lcm_drv->cust_mapping)
+						{
+							level = lcm_drv->cust_mapping(tmp_level);
+						}
+						else 
+#endif
 					level = brightness_mapping(tmp_level);
 				else
 					level = brightness_mapto64(tmp_level);
@@ -872,7 +912,10 @@ int mt_mt65xx_led_set_cust(struct cust_mt65xx_led *cust, int level)
 		LEDS_DEBUG("brightness_set_cust:backlight control by LCM\n");
 		/* warning for this API revork */
 		return ((cust_brightness_set) (cust->data)) (level, bl_div_hal);
-
+#ifdef CONFIG_WT_CUST_TORCH_FLASHLIGHT
+		case MT65XX_LED_MODE_CUST_FLASHLIGHT:
+			return ((cust_flashlight_brightness_set)(cust->data))(cust->name,level);
+#endif
 	case MT65XX_LED_MODE_CUST_BLS_PWM:
 		if (strcmp(cust->name, "lcd-backlight") == 0)
 			bl_brightness_hal = level;
@@ -905,6 +948,16 @@ void mt_mt65xx_led_set(struct led_classdev *led_cdev, enum led_brightness level)
 
 #ifdef CONFIG_MTK_AAL_SUPPORT
 	if (led_data->level != level) {
+#ifdef CONFIG_WT_LCD_BACKLIGHT_DELAY_100MS
+		    if(led_data->level == 0 && level != 0)
+		    {  
+		    	//if(force_get_tbat() < -10)
+				{
+					mdelay(100);
+				}
+		    }
+
+#endif
 		led_data->level = level;
 		if (strcmp(led_data->cust.name, "lcd-backlight") != 0) {
 			LEDS_DEBUG("Set NLED directly %d at time %lu\n",
@@ -936,6 +989,16 @@ void mt_mt65xx_led_set(struct led_classdev *led_cdev, enum led_brightness level)
 #else
 	/* do something only when level is changed */
 	if (led_data->level != level) {
+#ifdef CONFIG_WT_LCD_BACKLIGHT_DELAY_100MS
+		    if(led_data->level == 0 && level != 0)
+		    { 
+		    	//if(force_get_tbat() < -10)
+				{
+					mdelay(100);
+				}
+		    }
+
+#endif
 		led_data->level = level;
 		if (strcmp(led_data->cust.name, "lcd-backlight") != 0) {
 			LEDS_DEBUG("Set NLED directly %d at time %lu\n",

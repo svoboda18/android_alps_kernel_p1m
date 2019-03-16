@@ -35,6 +35,14 @@ LCM_DSI_MODE_CON lcm_dsi_mode;
 
 LCM_DRIVER *lcm_driver_list[] = {
 
+#if defined(OTM1284A_HD720_DSI_VDO_BAOLONGDA)
+	&otm1284a_hd720_dsi_vdo_baolongda_lcm_drv,
+#endif
+
+#if defined(HX8394D_HD720_DSI_VDO_TIANMA)
+	&hx8394d_hd720_dsi_vdo_tianma_lcm_drv,
+#endif
+
 #if defined(HCT_OTM1285A_DSI_VDO_HD_BOE)
 &hct_otm1285a_dsi_vdo_hd_boe,
 #endif

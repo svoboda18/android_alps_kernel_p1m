@@ -1,16 +1,3 @@
-/*
- * Copyright (C) 2015 MediaTek Inc.
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- */
-
 /*****************************************************************************
 *
 * Filename:
@@ -144,6 +131,8 @@
 
 /* CON7 */
 /* Status flag */
+#define CON7_VOBSTOL2_SNS_MASK		0x01
+#define CON7_VOBSTOL2_SNS_SHIFT		1
 
 /* CON8 */
 #define CON8_NTC_RMV_MASK		0x01
@@ -182,6 +171,20 @@
 
 /* CON10 */
 /* Interrupt mask */
+#define CON10_VBUSOK_MASK   0x01  //vbus ok?
+#define CON10_VBUSOK_SHIFT  0
+
+#define CON10_TSD_MASK   0x01   //thermal shut down
+#define CON10_TSD_SHIFT  2
+
+#define CON10_TM2_MASK   0x01   //thermal2  warning 
+#define CON10_TM2_SHIFT  3
+
+#define CON10_TM1_MASK   0x01   //thermal1  warning 
+#define CON10_TM1_SHIFT  4
+
+#define CON10_TWARN_MASK   0x01   //thermal  warning 
+#define CON10_TWARN_SHIFT  5
 
 /* CON11 */
 /* Interrupt mask */
@@ -191,6 +194,11 @@
 
 /* CON13 */
 /* Interrupt mask */
+#define CON13_VOBSTOL2_MASK  0x01
+#define CON13_VOBSTOL2_SHIFT 4
+
+#define CON13_VOBSTOL1_MASK  0x01
+#define CON13_VOBSTOL1_SHIFT 3
 
 /* CON14 */
 #define CON14_CTRL_VBAT_MASK		0x3F
