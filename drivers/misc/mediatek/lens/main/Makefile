@@ -39,6 +39,7 @@ mainaf-y  += common/bu6429af/BU6429AF.o
 mainaf-y  += common/dw9714af/DW9714AF.o
 mainaf-y  += common/dw9814af/DW9814AF.o
 mainaf-y  += common/dw9718af/DW9718AF.o
+mainaf-$(CONFIG_MTK_LENS_DW9718AF_SUNNY_SUPPORT)    += common/dw9718af_sunny/DW9718AF_SUNNY.o
 mainaf-y  += common/dw9718saf/DW9718SAF.o
 mainaf-y  += common/dw9719taf/DW9719TAF.o
 mainaf-y  += common/lc898212af/LC898212AF.o

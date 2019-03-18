@@ -1204,7 +1204,7 @@ static int bl_Cust_Min = 28;
 static int setting_max = 1023;
 static int setting_min = 40;
 
-int lcm_brightness_mapping(int level)
+static unsigned int lcm_brightness_mapping(int level)
 {
    int mapped_level;
 
@@ -1232,7 +1232,7 @@ LCM_DRIVER otm1284a_hd720_dsi_vdo_baolongda_lcm_drv =
 	.suspend        = lcm_suspend,
 	.resume         = lcm_resume,
 	.compare_id     = lcm_compare_id,
-	.init_power		= lcm_init_power,
+	.init_power	= lcm_init_power,
 	.resume_power = lcm_resume_power,
 	.suspend_power = lcm_suspend_power,
 	//.esd_check 	= lcm_esd_check,

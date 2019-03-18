@@ -31,7 +31,7 @@
 #include <linux/delay.h>
 
 #include "lcm_drv.h"
-extern LCM_DRIVER  *lcm_drv;
+LCM_DRIVER  *lcm_drv;
 
 /* #include <mach/mt_pwm.h>
 #include <mach/upmu_common_sw.h>

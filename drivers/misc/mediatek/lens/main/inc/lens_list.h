@@ -24,6 +24,12 @@ extern long AK7371AF_Ioctl(struct file *a_pstFile, unsigned int a_u4Command, uns
 extern int AK7371AF_Release(struct inode *a_pstInode, struct file *a_pstFile);
 extern int AK7371AF_PowerDown(void);
 
+#ifdef CONFIG_MTK_LENS_DW9718AF_SUNNY_SUPPORT
+extern int DW9718AF_SUNNY_SetI2Cclient(struct i2c_client *pstAF_I2Cclient, spinlock_t *pAF_SpinLock, int *pAF_Opened);
+extern long DW9718AF_SUNNY_Ioctl(struct file *a_pstFile, unsigned int a_u4Command, unsigned long a_u4Param);
+extern int DW9718AF_SUNNY_Release(struct inode *a_pstInode, struct file *a_pstFile);
+#endif
+
 #define BU6424AF_SetI2Cclient BU6424AF_SetI2Cclient_Main
 #define BU6424AF_Ioctl BU6424AF_Ioctl_Main
 #define BU6424AF_Release BU6424AF_Release_Main

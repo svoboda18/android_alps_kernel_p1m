@@ -803,7 +803,7 @@ static int bl_Cust_Min = 28;
 static int setting_max = 1023;
 static int setting_min = 40;
 
-static int lcm_brightness_mapping(int level)
+static unsigned int lcm_brightness_mapping(int level)
 {
    int mapped_level;
 
@@ -872,7 +872,7 @@ LCM_DRIVER hx8394d_hd720_dsi_vdo_tianma_lcm_drv =
 	.update         = lcm_update,
 #endif
 #ifdef CONFIG_WT_BRIGHTNESS_MAPPING_WITH_LCM
-	//.cust_mapping = lcm_brightness_mapping,
+	.cust_mapping = lcm_brightness_mapping,
 #endif
 #ifdef CONFIG_WT_GAMMA_PQ_WITH_MULTI_LCM	
 	.pq_standard_param = lcm_get_pq_standard_param_tianma,	

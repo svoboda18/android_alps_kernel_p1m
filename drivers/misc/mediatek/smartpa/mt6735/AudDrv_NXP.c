@@ -225,13 +225,14 @@ ssize_t  NXPSpk_read_byte(u8 addr, u8 *returnData)
 //write register
 ssize_t  NXPExt_write_byte(u8 addr, u8 writeData)
 {
+
+    char write_data[2] = {0};
+    int ret = 0;
     if (!new_client)
     {
         printk("I2C client not initialized!!");
         return -1;
     }
-    char    write_data[2] = {0};
-    int    ret = 0;
     write_data[0] = addr;         // ex. 0x01
     write_data[1] = writeData;
     ret = i2c_master_send(new_client, write_data, 2);
@@ -247,7 +248,6 @@ ssize_t  NXPExt_write_byte(u8 addr, u8 writeData)
 
 static int NXPExtSpk_register()
 {
-    printk("NXPExtSpk_register \n");
 #if 0//CONFIG_MTK_NXP_TFA9897
     mt_set_gpio_mode(GPIO_AUD_EXTHP_EN_PIN, GPIO_MODE_00);
     mt_set_gpio_dir(GPIO_AUD_EXTHP_EN_PIN, GPIO_DIR_OUT);
@@ -258,6 +258,7 @@ static int NXPExtSpk_register()
     struct i2c_adapter *adapter;
     struct i2c_client *client;
     int ret = 0;
+    printk("NXPExtSpk_register \n");
 
     adapter = i2c_get_adapter(TFA_I2C_CHANNEL);
     if (!adapter) {
@@ -372,7 +373,7 @@ static int nxp_i2c_master_send(const struct i2c_client *client, const char *buf,
 	}
 	else
 	{
-		msg.addr = client->addr & I2C_MASK_FLAG | I2C_DMA_FLAG;
+		msg.addr = (client->addr & I2C_MASK_FLAG) | I2C_DMA_FLAG;
 	}	
 		
 	msg.flags = client->flags & I2C_M_TEN;
@@ -409,7 +410,7 @@ static int nxp_i2c_master_recv(const struct i2c_client *client, char *buf, int c
 	}
 	else
 	{
-		msg.addr = client->addr & I2C_MASK_FLAG | I2C_DMA_FLAG;
+		msg.addr = (client->addr & I2C_MASK_FLAG) | I2C_DMA_FLAG;
 	}
 
 	ret = i2c_transfer(adap, &msg, 1);
@@ -453,7 +454,7 @@ static ssize_t AudDrv_nxpspk_write(struct file *fp, const char __user *data, siz
 	else
 	{
 	    //new_client->addr = new_client->addr & I2C_MASK_FLAG | I2C_DMA_FLAG |I2C_ENEXT_FLAG;  //cruson
-		ret = nxp_i2c_master_send(new_client, Tfa9890I2CDMABuf_pa, count);
+		ret = nxp_i2c_master_send(new_client,(char *) Tfa9890I2CDMABuf_pa, count);
 	}
 	kfree(tmp);
 	return ret;
@@ -481,7 +482,7 @@ static ssize_t AudDrv_nxpspk_read(struct file *fp,  char __user *data, size_t co
 	else
 	{
 	    //new_client->addr = new_client->addr & I2C_MASK_FLAG | I2C_DMA_FLAG |I2C_ENEXT_FLAG;  //cruson
-		ret = nxp_i2c_master_recv(new_client,Tfa9890I2CDMABuf_pa,count);
+		ret = nxp_i2c_master_recv(new_client,(char *)Tfa9890I2CDMABuf_pa,count);
 		for(i = 0; i < count; i++)
 		{
 			tmp[i] = Tfa9890I2CDMABuf_va[i];

@@ -858,7 +858,7 @@ typedef struct {
 	/* /////////////PWM///////////////////////////// */
 	void (*set_pwm_for_mix)(int enable);
 #ifdef CONFIG_WT_BRIGHTNESS_MAPPING_WITH_LCM
-        unsigned int (*cust_mapping)(unsigned int level);
+        unsigned int (*cust_mapping)(int level);
 #endif
 #ifdef CONFIG_WT_GAMMA_PQ_WITH_MULTI_LCM
 	void (*pq_standard_param)(DISP_PQ_PARAM_LCD *pq_data);
