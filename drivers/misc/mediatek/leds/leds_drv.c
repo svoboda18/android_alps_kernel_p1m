@@ -30,8 +30,8 @@
 #include <linux/slab.h>
 #include <linux/spinlock.h>
 /* #include <mach/mt_pwm.h> */
-/* #include <mach/mt_pwm_hal.h> */
-/* #include <mach/mt_gpio.h> */
+/* #include <mach/mt_pwm_hal.h>
+#include <mach/mt_gpio.h> */
 /*
 #include <mach/upmu_common_sw.h>
 #include <mach/upmu_hw.h> */
@@ -44,11 +44,10 @@
 #include <ddp_aal.h>
 #endif
 
-#ifdef CONFIG_BACKLIGHT_SUPPORT_LP8557
 #include <linux/of_gpio.h>
-#include <linux/gpio.h>
+/*#include <linux/gpio.h>*/
 #include <asm-generic/gpio.h>
-#endif
+
 /****************************************************************************
  * variables
  ***************************************************************************/
@@ -601,6 +600,32 @@ static ssize_t show_pwm_register(struct device *dev,
 static DEVICE_ATTR(pwm_register, 0664, show_pwm_register, store_pwm_register);
 #endif
 
+
+long flashlight_led_setby_gpio(char *led_name, int level)
+{
+	gpio_direction_output(42, 0);
+	gpio_direction_output(43, 0);
+
+	if ((level > 0) && (level <= 128))
+	{
+gpio_direction_output(42, 1);
+		gpio_direction_output(43, 0);
+	}
+	else if ((level > 128) && (level <= 255))
+	{
+		gpio_direction_output(42, 0);
+		gpio_direction_output(43, 1);
+	}	
+	else
+	{
+		gpio_direction_output(42, 0);
+		gpio_direction_output(43, 0);
+	}
+
+	return 0;
+}
+
+
 #ifdef CONFIG_BACKLIGHT_SUPPORT_LP8557
 static int led_i2c_probe(struct i2c_client *client, const struct i2c_device_id *id);
 static int led_i2c_remove(struct i2c_client *client);
@@ -826,6 +851,9 @@ static void mt65xx_leds_shutdown(struct platform_device *pdev)
 #endif
 			break;
 		case MT65XX_LED_MODE_NONE:
+		case MT65XX_LED_MODE_CUST_FLASH:
+			((cust_flashlight_brightness_set)(g_leds_data[i]->cust.data))(g_leds_data[i]->cust.name, 0);
+			break;
 		default:
 			break;
 		}

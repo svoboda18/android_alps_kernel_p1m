@@ -1,16 +1,3 @@
-/*
- * Copyright (C) 2015 MediaTek Inc.
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License version 2 as
- * published by the Free Software Foundation.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
- * GNU General Public License for more details.
- */
-
 #ifndef _CUST_BAT_H_
 #define _CUST_BAT_H_
 
@@ -22,9 +9,9 @@
 /* Battery Temperature Protection */
 #define MTK_TEMPERATURE_RECHARGE_SUPPORT
 #define MAX_CHARGE_TEMPERATURE  50
-#define MAX_CHARGE_TEMPERATURE_MINUS_X_DEGREE	47
+#define MAX_CHARGE_TEMPERATURE_MINUS_X_DEGREE	48
 #define MIN_CHARGE_TEMPERATURE  0
-#define MIN_CHARGE_TEMPERATURE_PLUS_X_DEGREE	6
+#define MIN_CHARGE_TEMPERATURE_PLUS_X_DEGREE	2
 #define ERR_CHARGE_TEMPERATURE  0xFF
 
 /* Linear Charging Threshold */
@@ -36,10 +23,13 @@
 /* Charging Current Setting */
 #define USB_CHARGER_CURRENT_SUSPEND			0
 #define USB_CHARGER_CURRENT_UNCONFIGURED	CHARGE_CURRENT_70_00_MA
-#define USB_CHARGER_CURRENT_CONFIGURED		CHARGE_CURRENT_500_00_MA
+#define USB_CHARGER_CURRENT_CONFIGURED		CHARGE_CURRENT_900_00_MA
 
-#define USB_CHARGER_CURRENT					CHARGE_CURRENT_600_00_MA
-#define AC_CHARGER_CURRENT					CHARGE_CURRENT_800_00_MA
+#define USB_CHARGER_CURRENT			CHARGE_CURRENT_900_00_MA
+#define AC_CHARGER_CURRENT			CHARGE_CURRENT_1200_00_MA
+#define AC_CHARGER_CURRENT_OUTPUT_MAX		CHARGE_CURRENT_1900_00_MA
+#define AC_CHARGER_CURRENT_LIMIT		CHARGE_CURRENT_1900_00_MA //Other_lenovo_req huangfusheng.wt modify 20150629 temperature rise test
+#define AC_CHARGER_CURRENT_OUTPUT_LIMIT_MAX	CHARGE_CURRENT_1200_00_MA //Other_lenovo_req huangfusheng.wt modify 20150629 temperature rise test
 #define NON_STD_AC_CHARGER_CURRENT			CHARGE_CURRENT_500_00_MA
 #define CHARGING_HOST_CHARGER_CURRENT       CHARGE_CURRENT_650_00_MA
 #define APPLE_0_5A_CHARGER_CURRENT          CHARGE_CURRENT_500_00_MA
@@ -49,11 +39,11 @@
 
 /* Precise Tunning */
 #define BATTERY_AVERAGE_DATA_NUMBER	3
-#define BATTERY_AVERAGE_SIZE 30
+#define BATTERY_AVERAGE_SIZE 15
 
 /* charger error check */
 #define V_CHARGER_ENABLE 0				/* 1:ON , 0:OFF	*/
-#define V_CHARGER_MAX 6500				/* 6.5 V	*/
+#define V_CHARGER_MAX 6000				/* 6.5 V	*/
 #define V_CHARGER_MIN 4400				/* 4.4 V	*/
 
 /* Tracking TIME */
@@ -71,7 +61,7 @@
 //#define BATTERY_NOTIFY_CASE_0005_TOTAL_CHARGINGTIME
 */
 /* High battery support */
-/*#define HIGH_BATTERY_VOLTAGE_SUPPORT*/
+#define HIGH_BATTERY_VOLTAGE_SUPPORT
 
 /* JEITA parameter */
 /*#define MTK_JEITA_STANDARD_SUPPORT*/

@@ -1,15 +1,3 @@
-/*
-* Copyright (C) 2016 MediaTek Inc.
-*
-* This program is free software; you can redistribute it and/or modify
-* it under the terms of the GNU General Public License version 2 as
-* published by the Free Software Foundation.
-*
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
-* See http://www.gnu.org/licenses/gpl-2.0.html for more details.
-*/
 #ifndef _KD_CAMERA_HW_H_
 #define _KD_CAMERA_HW_H_
 
@@ -96,6 +84,26 @@ typedef enum {
 	CAM1RST,
 	CAMLDO
 } CAMPowerType;
+
+//yinyapeng add ==>
+ typedef enum {
+ 		MAIN_NOCAMERA,
+		MAIN_S5K5E2,
+		MAIN_GC5005,
+		MAIN_HI553,
+} UsedMainCameraType; 
+
+ typedef enum {
+ 		SUB_NOCAMERA,
+		SUB_GC2355,
+		SUB_GC2365,
+		SUB_SP2509,
+} UsedSubCameraType; 
+ 
+
+
+//<===end 
+
 extern bool _hwPowerDown(KD_REGULATOR_TYPE_T type);
 extern bool _hwPowerOn(KD_REGULATOR_TYPE_T type, int powerVolt);
 

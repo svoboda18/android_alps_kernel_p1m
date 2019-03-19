@@ -111,6 +111,10 @@
 *
 ********************************************************************************/
 /* SENSOR CHIP VERSION */
+
+#define OV8865_SUNNY_SENSOR_ID                  0x8866
+#define HI551AVC_SENSOR_ID                      0x0552
+
 /*IMX*/
 #define IMX398_SENSOR_ID                        0x0398
 #define IMX268_SENSOR_ID                        0x0268
@@ -307,6 +311,10 @@
 /* CAMERA DRIVER NAME */
 #define CAMERA_HW_DEVNAME                       "kd_camera_hw"
 /* SENSOR DEVICE DRIVER NAME */
+
+#define SENSOR_DRVNAME_OV8865_MIPI_RAW_SUNNY    "ov8865mipiraw_sunny"
+#define SENSOR_DRVNAME_HI551AVC_MIPI_RAW        "hi551avcmipiraw"
+
 /*IMX*/
 #define SENSOR_DRVNAME_IMX398_MIPI_RAW          "imx398mipiraw"
 #define SENSOR_DRVNAME_IMX386_MIPI_RAW          "imx386mipiraw"

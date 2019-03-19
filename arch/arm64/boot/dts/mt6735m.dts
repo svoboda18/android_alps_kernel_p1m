@@ -1157,12 +1157,6 @@ initrd=0x44000000,0x1000000 loglevel=8 androidboot.hardware=mt6735";
 			#gpio-cells = <2>;
 		};
 
-		ncp1854@0X36 {
-			compatible = "mediatek,ncp1854", "mediatek,ncp1851";
-			reg = <0x36>;
-			status = "okay";
- 		};
-
 
 		i2c0:i2c@11007000 {
 			compatible = "mediatek,mt6735m-i2c";
@@ -1218,6 +1212,12 @@ initrd=0x44000000,0x1000000 loglevel=8 androidboot.hardware=mt6735";
 			compatible = "mediatek,mt6735-accdet",
 						"mediatek,mt6735m-accdet";
 		};
+
+		ncp1854: ncp1854@36 {
+			status = "okay";
+			compatible = "mediatek,ncp1854", "mediatek,ncp1851";
+			reg = <0x36>;
+ 		};
 
 		THERM_CTRL@0x1100B000 {
 			compatible = "mediatek,THERM_CTRL";
@@ -1795,7 +1795,9 @@ initrd=0x44000000,0x1000000 loglevel=8 androidboot.hardware=mt6735";
 			interrupts = <0 181 0x8>;
 		};
 
-
+		flashlight:flashlight {
+			compatible = "mediatek,mt6735-flashlight";		
+		};
 
 		IMGSYS_CONFG@0x15000000 {
 			compatible = "mediatek,IMGSYS_CONFG";

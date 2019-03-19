@@ -38,19 +38,7 @@
 #include <linux/mutex.h>
 #include <linux/i2c.h>
 #include <linux/leds.h>
-
-/*#include <cust_gpio_usage.h>*/
 #include <mt_gpio.h>
-//#include <gpio_const.h>
-/******************************************************************************
- * GPIO configuration
-******************************************************************************/
-#define GPIO_CAMERA_FLASH_EN_PIN			(GPIO90 | 0x80000000)
-#define GPIO_CAMERA_FLASH_EN_PIN_M_CLK		GPIO_MODE_03
-#define GPIO_CAMERA_FLASH_EN_PIN_M_EINT		GPIO_MODE_01
-#define GPIO_CAMERA_FLASH_EN_PIN_M_GPIO		GPIO_MODE_00
-#define GPIO_CAMERA_FLASH_EN_PIN_CLK		CLK_OUT1
-#define GPIO_CAMERA_FLASH_EN_PIN_FREQ		GPIO_CLKSRC_NONE
 
 /******************************************************************************
  * Debug configuration
@@ -77,6 +65,7 @@ static u32 strobe_Res;
 static u32 strobe_Timeus;
 static BOOL g_strobe_On;
 
+static int g_duty=-1;
 static int g_timeOutTimeMs;
 
 static DEFINE_MUTEX(g_strobeSem);
@@ -85,22 +74,30 @@ static struct work_struct workTimeOut;
 
 /* #define FLASH_GPIO_ENF GPIO12 */
 /* #define FLASH_GPIO_ENT GPIO13 */
-#define FLASH_GPIO_EN GPIO_CAMERA_FLASH_EN_PIN
 
 /*****************************************************************************
 Functions
 *****************************************************************************/
 static void work_timeOutFunc(struct work_struct *data);
 
+
 int FL_Enable(void)
 {
-	PK_DBG(" FL_Enable line=%d\n", __LINE__);
-
+	if(g_duty==0)
+{
 	flashlight_gpio_set(FLASHLIGHT_PIN_HWEN, STATE_HIGH);
-
-	return 0;
+	flashlight_gpio_set(FLASHLIGHT_PIN_TORCH, STATE_LOW);
+	PK_DBG("Modified FL_Enable(Torch), line=%d\n",__LINE__);
+}
+	else
+{
+	flashlight_gpio_set(FLASHLIGHT_PIN_HWEN, STATE_LOW);
+	flashlight_gpio_set(FLASHLIGHT_PIN_TORCH, STATE_HIGH);
+	PK_DBG("Modified FL_Enable(Flash), line=%d\n",__LINE__);
 }
 
+    return 0;
+}
 
 
 int FL_Disable(void)
@@ -108,6 +105,7 @@ int FL_Disable(void)
 	PK_DBG(" FL_Disable line=%d\n", __LINE__);
 
 	flashlight_gpio_set(FLASHLIGHT_PIN_HWEN, STATE_LOW);
+	flashlight_gpio_set(FLASHLIGHT_PIN_TORCH, STATE_LOW);
 
 	return 0;
 }
@@ -115,6 +113,7 @@ int FL_Disable(void)
 int FL_dim_duty(kal_uint32 duty)
 {
 	PK_DBG(" FL_dim_duty line=%d\n", __LINE__);
+	g_duty = duty;
 	return 0;
 }
 

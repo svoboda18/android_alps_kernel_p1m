@@ -130,15 +130,15 @@
 		vib_limit = <9>;
 		vib_vol= <5>;
 	};
-	flashlight:flashlight {
-		compatible = "mediatek,mt6735-flashlight";
-	};
 };
 
-#include "p1m_fg_bat_setting.dtsi"
-
-/*
 &i2c1 {
+
+	ncp1854@36 {
+		compatible = "mediatek,ncp1854", "mediatek,ncp1851";
+		reg = <0x36>;
+		status = "okay";
+ 	};
 
 	cap_touch@38 {
 		compatible = "mediatek,cap_touch_cust";
@@ -150,7 +150,7 @@
 		reg = <0x3e>;
 	};
 };
-*/
+
 
 &i2c2 {
 /* start sensor */
@@ -294,6 +294,7 @@
 };
 
 /* TOUCH end */
+
 /* CAMERA GPIO standardization */
 &pio {
 	camera_pins_cam0_rst0: cam0@0 {
@@ -304,49 +305,49 @@
 		};
 	};
 	camera_pins_cam0_rst1: cam0@1 {
-		pins_cmd_dat {
+	    pins_cmd_dat {
 			pins = <PINMUX_GPIO44__FUNC_GPIO44>;/*GPIO_CAMERA_CMRST_PIN*/
 			slew-rate = <1>;
 			output-high;
 		};
 	};
 	camera_pins_cam0_pnd0: cam0@2 {
-		pins_cmd_dat {
+	    pins_cmd_dat {
 			pins = <PINMUX_GPIO7__FUNC_GPIO7>;/*GPIO_CAMERA_CMPDN_PIN*/
 			slew-rate = <1>;
 			output-low;
 		};
 	};
 	camera_pins_cam0_pnd1: cam0@3 {
-		pins_cmd_dat {
+	    pins_cmd_dat {
 			pins = <PINMUX_GPIO7__FUNC_GPIO7>;/*GPIO_CAMERA_CMPDN_PIN*/
 			slew-rate = <1>;
 			output-high;
 		};
 	};
 	camera_pins_cam1_rst0: cam1@0 {
-		pins_cmd_dat {
+	    pins_cmd_dat {
 			pins = <PINMUX_GPIO11__FUNC_GPIO11>;/*GPIO_CAMERA_CMRST1_PIN*/
 			slew-rate = <1>; /*direction 0:in, 1:out*/
 			output-low;/*direction out used only. output_low or high*/
 		};
 	};
 	camera_pins_cam1_rst1: cam1@1 {
-		pins_cmd_dat {
+	    pins_cmd_dat {
 			pins = <PINMUX_GPIO11__FUNC_GPIO11>;/*GPIO_CAMERA_CMRST1_PIN*/
 			slew-rate = <1>;
 			output-high;
 		};
 	};
 	camera_pins_cam1_pnd0: cam1@2 {
-		pins_cmd_dat {
+	    pins_cmd_dat {
 			pins = <PINMUX_GPIO12__FUNC_GPIO12>;/*GPIO_CAMERA_CMPDN1_PIN*/
 			slew-rate = <1>;
 			output-low;
 		};
 	};
 	camera_pins_cam1_pnd1: cam1@3 {
-		pins_cmd_dat {
+	    pins_cmd_dat {
 			pins = <PINMUX_GPIO12__FUNC_GPIO12>;/*GPIO_CAMERA_CMPDN1_PIN*/
 			slew-rate = <1>;
 			output-high;
@@ -354,21 +355,20 @@
 	};
 	camera_pins_cam_ldo0_0: cam@0 {
 		pins_cmd_dat {
-			pins = <PINMUX_GPIO68__FUNC_GPIO68>;/*GPIO_SPI_MOSI_PIN*/
+			pins = <PINMUX_GPIO9__FUNC_GPIO9>;
 			slew-rate = <1>;
 			output-low;
 		};
 	};
 	camera_pins_cam_ldo0_1: cam@1 {
 		pins_cmd_dat {
-			pins = <PINMUX_GPIO68__FUNC_GPIO68>;/*GPIO_SPI_MOSI_PIN*/
+			pins = <PINMUX_GPIO9__FUNC_GPIO9>;
 			slew-rate = <1>;
 			output-high;
 		};
 	};
 	camera_pins_default: camdefault {
 	};
-
 };
 
 &kd_camera_hw1 {
@@ -392,13 +392,13 @@
 
 /* CONSYS GPIO standardization */
 &pio {
-	consys_pins_default: consys_default {
+	consys_pins_default: default {
 
 	};
 
 	gpslna_pins_init: gpslna@0 {
 
-		pins_cmd_dat {
+	    pins_cmd_dat {
 			pins = <PINMUX_GPIO79__FUNC_GPIO79>;
 			slew-rate = <0>;
 			bias-disable;
@@ -408,7 +408,7 @@
 
 	gpslna_pins_oh: gpslna@1 {
 
-		pins_cmd_dat {
+	    pins_cmd_dat {
 			pins = <PINMUX_GPIO79__FUNC_GPIO79>;
 			slew-rate = <1>;
 			output-high;
@@ -417,7 +417,7 @@
 
 	gpslna_pins_ol: gpslna@2 {
 
-		pins_cmd_dat {
+	    pins_cmd_dat {
 			pins = <PINMUX_GPIO79__FUNC_GPIO79>;
 			slew-rate = <1>;
 			output-low;
@@ -613,26 +613,26 @@
 		};
 	};
 
-	gpio96_mode2_drvvbus: drvvbus_init {
+	gpio83_mode2_drvvbus: drvvbus_init {
 		pins_cmd_dat {
-			pins = <PINMUX_GPIO96__FUNC_GPIO96>;
+			pins = <PINMUX_GPIO83__FUNC_GPIO83>;
 			slew-rate = <1>;
 			bias-pull-down = <00>;
 		};
 	};
 
-	gpio96_mode2_drvvbus_low: drvvbus_low {
+	gpio83_mode2_drvvbus_low: drvvbus_low {
 		pins_cmd_dat {
-			pins = <PINMUX_GPIO96__FUNC_GPIO96>;
+			pins = <PINMUX_GPIO83__FUNC_GPIO83>;
 			slew-rate = <1>;
 			output-low;
 			bias-pull-down = <00>;
 		};
 	};
 
-	gpio96_mode2_drvvbus_high: drvvbus_high {
+	gpio83_mode2_drvvbus_high: drvvbus_high {
 		pins_cmd_dat {
-			pins = <PINMUX_GPIO96__FUNC_GPIO96>;
+			pins = <PINMUX_GPIO83__FUNC_GPIO83>;
 			slew-rate = <1>;
 			output-high;
 			bias-pull-down = <00>;
@@ -645,9 +645,9 @@
 	pinctrl-names = "usb_default", "iddig_irq_init", "drvvbus_init", "drvvbus_low", "drvvbus_high";
 	pinctrl-0 = <&usb_default>;
 	pinctrl-1 = <&gpio0_mode1_iddig>;
-	pinctrl-2 = <&gpio96_mode2_drvvbus>;
-	pinctrl-3 = <&gpio96_mode2_drvvbus_low>;
-	pinctrl-4 = <&gpio96_mode2_drvvbus_high>;
+	pinctrl-2 = <&gpio83_mode2_drvvbus>;
+	pinctrl-3 = <&gpio83_mode2_drvvbus_low>;
+	pinctrl-4 = <&gpio83_mode2_drvvbus_high>;
 	status = "okay";
 };
 /* USB GPIO Kernal Standardization end */
@@ -687,13 +687,29 @@
 
         flashlight_pins_hwen_high: hwen_high {
             pins_cmd_dat {
-                        pins = <PINMUX_GPIO43__FUNC_GPIO43>;
+                        pins = <PINMUX_GPIO42__FUNC_GPIO42>;
                         slew-rate = <1>;
                         output-high;
                 };
         };
 
         flashlight_pins_hwen_low: hwen_low {
+            pins_cmd_dat {
+                        pins = <PINMUX_GPIO42__FUNC_GPIO42>;
+                        slew-rate = <1>;
+                        output-low;
+                };
+        };
+        
+        flashlight_pins_torch_high: torch_high {
+            pins_cmd_dat {
+                        pins = <PINMUX_GPIO43__FUNC_GPIO43>;
+                        slew-rate = <1>;
+                        output-high;
+                };
+        };
+
+        flashlight_pins_torch_low: torch_low {
             pins_cmd_dat {
                         pins = <PINMUX_GPIO43__FUNC_GPIO43>;
                         slew-rate = <1>;
@@ -704,41 +720,16 @@
 };
 
 &flashlight {
-        pinctrl-names = "default", "hwen_high", "hwen_low";
+        pinctrl-names = "default", "hwen_high", "hwen_low", "torch_high", "torch_low";
         pinctrl-0 = <&flashlight_pins_default>;
         pinctrl-1 = <&flashlight_pins_hwen_high>;
         pinctrl-2 = <&flashlight_pins_hwen_low>;
+        pinctrl-3 = <&flashlight_pins_torch_high>;
+        pinctrl-4 = <&flashlight_pins_torch_low>;
         status = "okay";
 
 };
 /* FLASHLIGHT GPIO end */
 
-/* AUDIO GPIO standardization */
-&audgpio {
-	pinctrl-names = "default", "extamp-pullhigh", "extamp-pulllow";
-	pinctrl-0 = <&AUD_pins_default>;
-	pinctrl-1 = <&AUD_pins_extamp_high>;
-	pinctrl-2 = <&AUD_pins_extamp_low>;
-	status = "okay";
-};
-&pio {
-	AUD_pins_default: audiodefault {
-	};
-	AUD_pins_extamp_high: audexamphigh {
-		pins_cmd_dat {
-			pins = <PINMUX_GPIO4__FUNC_GPIO4>;
-				slew-rate = <1>;
-				output-high;
-		};
-	};
-	AUD_pins_extamp_low: audexamplow {
-		pins_cmd_dat {
-			pins = <PINMUX_GPIO4__FUNC_GPIO4>;
-				slew-rate = <1>;
-				output-low;
-		};
-	};
-};
-/* AUDIO end */
 #include <p1m/cust.dtsi>
 /*End of this file, DO NOT ADD ANYTHING HERE*/

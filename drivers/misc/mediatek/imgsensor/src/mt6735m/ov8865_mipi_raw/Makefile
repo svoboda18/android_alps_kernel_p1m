@@ -11,6 +11,9 @@
 # GNU General Public License for more details.
 #
 
+ccflags-y += -Wno-unused-variable -g
+ccflags-y += -Wno-unused-function -g
+
 obj-y += ov8865mipiraw_Sensor.o
 
 

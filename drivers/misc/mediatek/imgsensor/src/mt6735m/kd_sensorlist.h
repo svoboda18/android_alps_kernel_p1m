@@ -12,6 +12,10 @@
  */
 
 //s_add new sensor driver here
+
+UINT32 OV8865_MIPI_RAW_Sunny_SensorInit(PSENSOR_FUNCTION_STRUCT *pfFunc);
+UINT32 HI551AVC_MIPI_RAW_SensorInit(PSENSOR_FUNCTION_STRUCT *pfFunc);
+
 //export funtions
 /*IMX*/
 UINT32 IMX220_MIPI_RAW_SensorInit(PSENSOR_FUNCTION_STRUCT *pfFunc);
@@ -137,6 +141,16 @@ UINT32 T8EV5_YUV_SensorInit(PSENSOR_FUNCTION_STRUCT *pfFunc);
 //! 2. This file should be the same as mediatek\custom\common\hal\imgsensor\src\sensorlist.cpp
 ACDK_KD_SENSOR_INIT_FUNCTION_STRUCT kdSensorList[MAX_NUM_OF_SUPPORT_SENSOR+1] =
 {
+
+
+#if defined(OV8865_MIPI_RAW_SUNNY)
+    {OV8865_SUNNY_SENSOR_ID, SENSOR_DRVNAME_OV8865_MIPI_RAW_SUNNY,OV8865_MIPI_RAW_Sunny_SensorInit},
+#endif
+#if defined(HI551AVC_MIPI_RAW)
+    {HI551AVC_SENSOR_ID, SENSOR_DRVNAME_HI551AVC_MIPI_RAW,HI551AVC_MIPI_RAW_SensorInit},
+#endif
+
+
 /*IMX*/
 #if defined(IMX220_MIPI_RAW)
     {IMX220_SENSOR_ID, SENSOR_DRVNAME_IMX220_MIPI_RAW, IMX220_MIPI_RAW_SensorInit},
