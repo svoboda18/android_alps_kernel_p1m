@@ -3941,7 +3941,7 @@ int __batt_init_cust_data_from_cust_header(void)
 	return 0;
 }
 
-#if defined(BATTERY_DTS_SUPPORT) && defined(CONFIG_OF)
+#if !defined (CONFIG_MTK_NCP1854_SUPPORT) && defined(BATTERY_DTS_SUPPORT) && defined(CONFIG_OF)
 static void __batt_parse_node(const struct device_node *np,
 				const char *node_srting, int *cust_val)
 {
@@ -4159,9 +4159,11 @@ int batt_init_cust_data(void)
 {
 	__batt_init_cust_data_from_cust_header();
 
-#if defined(BATTERY_DTS_SUPPORT) && defined(CONFIG_OF)
+#if !defined(CONFIG_MTK_NCP1854_SUPPORT) && defined(BATTERY_DTS_SUPPORT) && defined(CONFIG_OF)
 	battery_log(BAT_LOG_CRTI, "battery custom init by DTS\n");
 	__batt_init_cust_data_from_dt();
+#else
+	battery_log(BAT_LOG_CRTI, "battery init by header file\n");
 #endif
 	return 0;
 }

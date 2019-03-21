@@ -26,37 +26,30 @@
 #include <linux/platform_device.h>
 #include <linux/atomic.h>
 
-#define POWER_NONE_MACRO MT65XX_POWER_NONE
-
+#include <accel.h>
 #include <cust_acc.h>
 #include "kxtj2_1009.h"
 
-#include <accel.h>
 #ifdef CONFIG_CUSTOM_KERNEL_SENSORHUB
 #include <SCP_sensorHub.h>
-#endif				/* #ifdef CONFIG_CUSTOM_KERNEL_SENSORHUB */
+#endif
 
 /*----------------------------------------------------------------------------*/
 #define I2C_DRIVERID_KXTJ2_1009 150
+#define POWER_NONE_MACRO MT65XX_POWER_NONE
 /*----------------------------------------------------------------------------*/
 #define DEBUG 1
 /*----------------------------------------------------------------------------*/
-
 #define SW_CALIBRATION
-
 /*----------------------------------------------------------------------------*/
-#define KXTJ2_1009_AXIS_X          0
+#define KXTJ2_1009_AXIS_X         0
 #define KXTJ2_1009_AXIS_Y          1
 #define KXTJ2_1009_AXIS_Z          2
 #define KXTJ2_1009_AXES_NUM        3
 #define KXTJ2_1009_DATA_LEN        6
 #define KXTJ2_1009_DEV_NAME        "KXTJ2_1009"
-
 /*----------------------------------------------------------------------------*/
 static const struct i2c_device_id kxtj2_1009_i2c_id[] = { {KXTJ2_1009_DEV_NAME, 0}, {} };
-
-#define COMPATIABLE_NAME "mediatek,kxtj2_1009_new"
-
 /*----------------------------------------------------------------------------*/
 static int kxtj2_1009_i2c_probe(struct i2c_client *client, const struct i2c_device_id *id);
 static int kxtj2_1009_i2c_remove(struct i2c_client *client);
@@ -66,7 +59,7 @@ static int gsensor_local_init(void);
 static int gsensor_remove(void);
 #ifdef CONFIG_CUSTOM_KERNEL_SENSORHUB
 static int gsensor_setup_irq(void);
-#endif				/* #ifdef CONFIG_CUSTOM_KERNEL_SENSORHUB */
+#endif
 static int gsensor_set_delay(u64 ns);
 /*----------------------------------------------------------------------------*/
 enum ADX_TRC {
@@ -102,95 +95,68 @@ struct kxtj2_1009_i2c_data {
 	struct hwmsen_convert cvt;
 #ifdef CONFIG_CUSTOM_KERNEL_SENSORHUB
 	struct work_struct irq_work;
-#endif				/* #ifdef CONFIG_CUSTOM_KERNEL_SENSORHUB */
-
-	/*misc */
+#endif
 	struct data_resolution *reso;
 	atomic_t trace;
 	atomic_t suspend;
 	atomic_t selftest;
 	atomic_t filter;
 	s16 cali_sw[KXTJ2_1009_AXES_NUM + 1];
-
-	/*data */
 	s8 offset[KXTJ2_1009_AXES_NUM + 1];	/*+1: for 4-byte alignment */
 	s16 data[KXTJ2_1009_AXES_NUM + 1];
-
 #ifdef CONFIG_CUSTOM_KERNEL_SENSORHUB
 	int SCP_init_done;
-#endif				/* #ifdef CONFIG_CUSTOM_KERNEL_SENSORHUB */
-
+#endif
 
 #if defined(CONFIG_KXTJ2_1009_LOWPASS)
 	atomic_t firlen;
 	atomic_t fir_en;
 	struct data_filter fir;
 #endif
-	/*early suspend */
 };
 /*----------------------------------------------------------------------------*/
-
 static const struct of_device_id accel_of_match[] = {
 	{.compatible = "mediatek,gsensor"},
 	{},
 };
-
 static struct i2c_driver kxtj2_1009_i2c_driver = {
 	.driver = {
-/* .owner          = THIS_MODULE, */
-		   .name = KXTJ2_1009_DEV_NAME,
-		   .of_match_table = accel_of_match,
-		   },
+	.name = KXTJ2_1009_DEV_NAME,
+	.of_match_table = accel_of_match,
+	},
 	.probe = kxtj2_1009_i2c_probe,
 	.remove = kxtj2_1009_i2c_remove,
 	.suspend = kxtj2_1009_suspend,
 	.resume = kxtj2_1009_resume,
 	.id_table = kxtj2_1009_i2c_id,
-/* .address_data = &kxtj2_1009_addr_data, */
 };
-
 /*----------------------------------------------------------------------------*/
 static struct i2c_client *kxtj2_1009_i2c_client;
 static struct kxtj2_1009_i2c_data *obj_i2c_data;
 static bool sensor_power = true;
-static int sensor_suspend;
+//static int sensor_suspend;
 static struct GSENSOR_VECTOR3D gsensor_gain;
 static char selftestRes[8] = { 0 };
 static DEFINE_MUTEX(gsensor_mutex);
 static DEFINE_MUTEX(gsensor_scp_en_mutex);
-
 static bool enable_status;
-
-static int gsensor_init_flag = -1;	/* 0<==>OK -1 <==> fail */
+static int gsensor_init_flag = -1;
 static struct acc_init_info kxtj2_1009_init_info = {
 	.name = "kxtj2_1009",
 	.init = gsensor_local_init,
 	.uninit = gsensor_remove,
 };
-
 /*----------------------------------------------------------------------------*/
-#if 1
-#define GSE_TAG                  "[Gsensor] "
+#define GSE_TAG                  "[ACCEL] "
 #define GSE_FUN(f)               pr_debug(GSE_TAG"%s\n", __func__)
 #define GSE_ERR(fmt, args...)    pr_err(GSE_TAG"%s %d : "fmt, __func__, __LINE__, ##args)
 #define GSE_LOG(fmt, args...)    pr_debug(GSE_TAG fmt, ##args)
-#else
-#define GSE_TAG
-#define GSE_FUN(f)
-#define GSE_ERR(fmt, args...)
-#define GSE_LOG(fmt, args...)
-#endif
-
 /*----------------------------------------------------------------------------*/
 static struct data_resolution kxtj2_1009_data_resolution[1] = {
-	/* combination by {FULL_RES,RANGE} */
-	{{0, 9}, 1024},		/* dataformat +/-2g  in 12-bit resolution;  { 3, 9} = 3.9 = (2*2*1000)/(2^12);  256 = (2^12)/(2*2) */
+	{{0, 9}, 1024},
 };
-
 /*----------------------------------------------------------------------------*/
 static struct data_resolution kxtj2_1009_offset_resolution = { {15, 6}, 64 };
-
-/*----------------------------------------------------------------------------*/
 /*----------------------------------------------------------------------------*/
 #ifdef CONFIG_CUSTOM_KERNEL_SENSORHUB
 int KXTJ2_1009_SCP_SetPowerMode(bool enable, int sensorType)
@@ -425,8 +391,6 @@ static int KXTJ2_1009_ReadOffset(struct i2c_client *client, s8 ofs[KXTJ2_1009_AX
 
 	GSE_LOG("offesx=%x, y=%x, z=%x", ofs[0], ofs[1], ofs[2]);
 #endif
-	/* printk("offesx=%x, y=%x, z=%x",ofs[0],ofs[1],ofs[2]); */
-
 	return err;
 }
 
@@ -533,81 +497,73 @@ static int KXTJ2_1009_ReadCalibrationEx(struct i2c_client *client, int act[KXTJ2
 static int KXTJ2_1009_WriteCalibration(struct i2c_client *client, int dat[KXTJ2_1009_AXES_NUM])
 {
 	struct kxtj2_1009_i2c_data *obj = i2c_get_clientdata(client);
-	int err = 0;
+	int err;
 	int cali[KXTJ2_1009_AXES_NUM], raw[KXTJ2_1009_AXES_NUM];
-#ifdef CONFIG_CUSTOM_KERNEL_SENSORHUB
-	SCP_SENSOR_HUB_DATA data;
-	union KXTJ2_1009_CUST_DATA *pCustData;
-	unsigned int len;
+#ifdef CUSTOM_KERNEL_SENSORHUB
+    SCP_SENSOR_HUB_DATA data;
+    KXTJ2_1009_CUST_DATA *pCustData;
+    unsigned int len;
+#endif
+#ifdef SW_CALIBRATION
+#else
+	int lsb = kxtj2_1009_offset_resolution.sensitivity;
+	int divisor = obj->reso->sensitivity/lsb;
 #endif
 
-	err = KXTJ2_1009_ReadCalibrationEx(client, cali, raw);
-	if (0 != err) {	/*offset will be updated in obj->offset */
+	if(0 != (err = KXTJ2_1009_ReadCalibrationEx(client, cali, raw)))	/*offset will be updated in obj->offset*/
+	{ 
 		GSE_ERR("read offset fail, %d\n", err);
 		return err;
 	}
 
-	GSE_LOG("OLDOFF: (%+3d %+3d %+3d): (%+3d %+3d %+3d) / (%+3d %+3d %+3d)\n",
+	GSE_LOG("OLDOFF: (%+3d %+3d %+3d): (%+3d %+3d %+3d) / (%+3d %+3d %+3d)\n", 
 		raw[KXTJ2_1009_AXIS_X], raw[KXTJ2_1009_AXIS_Y], raw[KXTJ2_1009_AXIS_Z],
 		obj->offset[KXTJ2_1009_AXIS_X], obj->offset[KXTJ2_1009_AXIS_Y], obj->offset[KXTJ2_1009_AXIS_Z],
-		obj->cali_sw[KXTJ2_1009_AXIS_X], obj->cali_sw[KXTJ2_1009_AXIS_Y],
-		obj->cali_sw[KXTJ2_1009_AXIS_Z]);
+		obj->cali_sw[KXTJ2_1009_AXIS_X], obj->cali_sw[KXTJ2_1009_AXIS_Y], obj->cali_sw[KXTJ2_1009_AXIS_Z]);
 
-#ifdef CONFIG_CUSTOM_KERNEL_SENSORHUB
-	pCustData = (union KXTJ2_1009_CUST_DATA *) data.set_cust_req.custData;
-	data.set_cust_req.sensorType = ID_ACCELEROMETER;
-	data.set_cust_req.action = SENSOR_HUB_SET_CUST;
-	pCustData->setCali.action = KXTJ2_1009_CUST_ACTION_SET_CALI;
-	pCustData->setCali.data[KXTJ2_1009_AXIS_X] = dat[KXTJ2_1009_AXIS_X];
-	pCustData->setCali.data[KXTJ2_1009_AXIS_Y] = dat[KXTJ2_1009_AXIS_Y];
-	pCustData->setCali.data[KXTJ2_1009_AXIS_Z] = dat[KXTJ2_1009_AXIS_Z];
-	len = offsetof(SCP_SENSOR_HUB_SET_CUST_REQ, custData) + sizeof(pCustData->setCali);
-	SCP_sensorHub_req_send(&data, &len, 1);
+#ifdef CUSTOM_KERNEL_SENSORHUB
+    pCustData = (KXTJ2_1009_CUST_DATA *)data.set_cust_req.custData;
+    data.set_cust_req.sensorType = ID_ACCELEROMETER;
+    data.set_cust_req.action = SENSOR_HUB_SET_CUST;
+    pCustData->setCali.action = KXTJ2_1009_CUST_ACTION_SET_CALI;
+    pCustData->setCali.data[KXTJ2_1009_AXIS_X] = dat[KXTJ2_1009_AXIS_X];
+    pCustData->setCali.data[KXTJ2_1009_AXIS_Y] = dat[KXTJ2_1009_AXIS_Y];
+    pCustData->setCali.data[KXTJ2_1009_AXIS_Z] = dat[KXTJ2_1009_AXIS_Z];
+    len = offsetof(SCP_SENSOR_HUB_SET_CUST_REQ, custData) + sizeof(pCustData->setCali);
+    SCP_sensorHub_req_send(&data, &len, 1);
 #endif
 
-	/*calculate the real offset expected by caller */
+	/*calculate the real offset expected by caller*/
 	cali[KXTJ2_1009_AXIS_X] += dat[KXTJ2_1009_AXIS_X];
 	cali[KXTJ2_1009_AXIS_Y] += dat[KXTJ2_1009_AXIS_Y];
 	cali[KXTJ2_1009_AXIS_Z] += dat[KXTJ2_1009_AXIS_Z];
 
-	GSE_LOG("UPDATE: (%+3d %+3d %+3d)\n",
+	GSE_LOG("UPDATE: (%+3d %+3d %+3d)\n", 
 		dat[KXTJ2_1009_AXIS_X], dat[KXTJ2_1009_AXIS_Y], dat[KXTJ2_1009_AXIS_Z]);
 
 #ifdef SW_CALIBRATION
-	obj->cali_sw[KXTJ2_1009_AXIS_X] =
-	    obj->cvt.sign[KXTJ2_1009_AXIS_X] * (cali[obj->cvt.map[KXTJ2_1009_AXIS_X]]);
-	obj->cali_sw[KXTJ2_1009_AXIS_Y] =
-	    obj->cvt.sign[KXTJ2_1009_AXIS_Y] * (cali[obj->cvt.map[KXTJ2_1009_AXIS_Y]]);
-	obj->cali_sw[KXTJ2_1009_AXIS_Z] =
-	    obj->cvt.sign[KXTJ2_1009_AXIS_Z] * (cali[obj->cvt.map[KXTJ2_1009_AXIS_Z]]);
+	obj->cali_sw[KXTJ2_1009_AXIS_X] = obj->cvt.sign[KXTJ2_1009_AXIS_X]*(cali[obj->cvt.map[KXTJ2_1009_AXIS_X]]);
+	obj->cali_sw[KXTJ2_1009_AXIS_Y] = obj->cvt.sign[KXTJ2_1009_AXIS_Y]*(cali[obj->cvt.map[KXTJ2_1009_AXIS_Y]]);
+	obj->cali_sw[KXTJ2_1009_AXIS_Z] = obj->cvt.sign[KXTJ2_1009_AXIS_Z]*(cali[obj->cvt.map[KXTJ2_1009_AXIS_Z]]);	
 #else
-	int divisor = obj->reso->sensitivity / lsb;	/* modified */
+	obj->offset[KXTJ2_1009_AXIS_X] = (s8)(obj->cvt.sign[KXTJ2_1009_AXIS_X]*(cali[obj->cvt.map[KXTJ2_1009_AXIS_X]])/(divisor));
+	obj->offset[KXTJ2_1009_AXIS_Y] = (s8)(obj->cvt.sign[KXTJ2_1009_AXIS_Y]*(cali[obj->cvt.map[KXTJ2_1009_AXIS_Y]])/(divisor));
+	obj->offset[KXTJ2_1009_AXIS_Z] = (s8)(obj->cvt.sign[KXTJ2_1009_AXIS_Z]*(cali[obj->cvt.map[KXTJ2_1009_AXIS_Z]])/(divisor));
 
-	obj->offset[KXTJ2_1009_AXIS_X] =
-	    (s8) (obj->cvt.sign[KXTJ2_1009_AXIS_X] * (cali[obj->cvt.map[KXTJ2_1009_AXIS_X]]) / (divisor));
-	obj->offset[KXTJ2_1009_AXIS_Y] =
-	    (s8) (obj->cvt.sign[KXTJ2_1009_AXIS_Y] * (cali[obj->cvt.map[KXTJ2_1009_AXIS_Y]]) / (divisor));
-	obj->offset[KXTJ2_1009_AXIS_Z] =
-	    (s8) (obj->cvt.sign[KXTJ2_1009_AXIS_Z] * (cali[obj->cvt.map[KXTJ2_1009_AXIS_Z]]) / (divisor));
+	/*convert software calibration using standard calibration*/
+	obj->cali_sw[KXTJ2_1009_AXIS_X] = obj->cvt.sign[KXTJ2_1009_AXIS_X]*(cali[obj->cvt.map[KXTJ2_1009_AXIS_X]])%(divisor);
+	obj->cali_sw[KXTJ2_1009_AXIS_Y] = obj->cvt.sign[KXTJ2_1009_AXIS_Y]*(cali[obj->cvt.map[KXTJ2_1009_AXIS_Y]])%(divisor);
+	obj->cali_sw[KXTJ2_1009_AXIS_Z] = obj->cvt.sign[KXTJ2_1009_AXIS_Z]*(cali[obj->cvt.map[KXTJ2_1009_AXIS_Z]])%(divisor);
 
-	/*convert software calibration using standard calibration */
-	obj->cali_sw[KXTJ2_1009_AXIS_X] =
-	    obj->cvt.sign[KXTJ2_1009_AXIS_X] * (cali[obj->cvt.map[KXTJ2_1009_AXIS_X]]) % (divisor);
-	obj->cali_sw[KXTJ2_1009_AXIS_Y] =
-	    obj->cvt.sign[KXTJ2_1009_AXIS_Y] * (cali[obj->cvt.map[KXTJ2_1009_AXIS_Y]]) % (divisor);
-	obj->cali_sw[KXTJ2_1009_AXIS_Z] =
-	    obj->cvt.sign[KXTJ2_1009_AXIS_Z] * (cali[obj->cvt.map[KXTJ2_1009_AXIS_Z]]) % (divisor);
-
-	GSE_LOG("NEWOFF: (%+3d %+3d %+3d): (%+3d %+3d %+3d) / (%+3d %+3d %+3d)\n",
-		obj->offset[KXTJ2_1009_AXIS_X] * divisor + obj->cali_sw[KXTJ2_1009_AXIS_X],
-		obj->offset[KXTJ2_1009_AXIS_Y] * divisor + obj->cali_sw[KXTJ2_1009_AXIS_Y],
-		obj->offset[KXTJ2_1009_AXIS_Z] * divisor + obj->cali_sw[KXTJ2_1009_AXIS_Z],
+	GSE_LOG("NEWOFF: (%+3d %+3d %+3d): (%+3d %+3d %+3d) / (%+3d %+3d %+3d)\n", 
+		obj->offset[KXTJ2_1009_AXIS_X]*divisor + obj->cali_sw[KXTJ2_1009_AXIS_X], 
+		obj->offset[KXTJ2_1009_AXIS_Y]*divisor + obj->cali_sw[KXTJ2_1009_AXIS_Y], 
+		obj->offset[KXTJ2_1009_AXIS_Z]*divisor + obj->cali_sw[KXTJ2_1009_AXIS_Z], 
 		obj->offset[KXTJ2_1009_AXIS_X], obj->offset[KXTJ2_1009_AXIS_Y], obj->offset[KXTJ2_1009_AXIS_Z],
-		obj->cali_sw[KXTJ2_1009_AXIS_X], obj->cali_sw[KXTJ2_1009_AXIS_Y],
-		obj->cali_sw[KXTJ2_1009_AXIS_Z]);
+		obj->cali_sw[KXTJ2_1009_AXIS_X], obj->cali_sw[KXTJ2_1009_AXIS_Y], obj->cali_sw[KXTJ2_1009_AXIS_Z]);
 
-	err = hwmsen_write_block(obj->client, KXTJ2_1009_REG_OFSX, obj->offset, KXTJ2_1009_AXES_NUM);
-	if (err) {
+	if(err = hwmsen_write_block(obj->client, KXTJ2_1009_REG_OFSX, obj->offset, KXTJ2_1009_AXES_NUM))
+	{
 		GSE_ERR("write offset fail: %d\n", err);
 		return err;
 	}
@@ -615,7 +571,6 @@ static int KXTJ2_1009_WriteCalibration(struct i2c_client *client, int dat[KXTJ2_
 
 	return err;
 }
-
 /*----------------------------------------------------------------------------*/
 static int KXTJ2_1009_CheckDeviceID(struct i2c_client *client)
 {
@@ -858,166 +813,200 @@ static int Wave_Max, Wave_Min;
 /*----------------------------------------------------------------------------*/
 static int KXTJ2_1009_ReadSensorData(struct i2c_client *client, char *buf, int bufsize)
 {
-	struct kxtj2_1009_i2c_data *obj = (struct kxtj2_1009_i2c_data *)i2c_get_clientdata(client);
+	struct kxtj2_1009_i2c_data *obj = (struct kxtj2_1009_i2c_data*)i2c_get_clientdata(client);
 	u8 databuf[20];
 	int acc[KXTJ2_1009_AXES_NUM];
 	int res = 0;
 /*Kionix Auto-Cali Start*/
 #ifdef KIONIX_AUTO_CAL
-	s16 raw[3];
-	int k;
-#endif
+    s16 raw[3];
+    int k;
+#endif    
 /*Kionix Auto-Cali End*/
 
-	memset(databuf, 0, sizeof(u8) * 10);
+	memset(databuf, 0, sizeof(u8)*10);
 
-	if (NULL == buf)
+	if(NULL == buf)
+	{
 		return -1;
-	if (NULL == client) {
+	}
+	if(NULL == client)
+	{
 		*buf = 0;
 		return -2;
 	}
 
-	if (sensor_suspend == 1)
+	if (atomic_read(&obj->suspend))
+	{
 		return 0;
+	}
+	/*if(sensor_power == FALSE)
+	{
+		res = KXTJ2_1009_SetPowerMode(client, true);
+		if(res)
+		{
+			GSE_ERR("Power on kxtj2_1009 error %d!\n", res);
+		}
+	}*/
 
-	res = KXTJ2_1009_ReadData(client, obj->data);
-	if (res != 0) {
+	if(0 != (res = KXTJ2_1009_ReadData(client, obj->data)))
+	{        
 		GSE_ERR("I2C error: ret value=%d", res);
 		return -3;
 	}
-#if 0				/* CONFIG_CUSTOM_KERNEL_SENSORHUB */
-	acc[KXTJ2_1009_AXIS_X] = obj->data[KXTJ2_1009_AXIS_X];
-	acc[KXTJ2_1009_AXIS_Y] = obj->data[KXTJ2_1009_AXIS_Y];
-	acc[KXTJ2_1009_AXIS_Z] = obj->data[KXTJ2_1009_AXIS_Z];
-	/* data has been calibrated in SCP side. */
-#else				/* #ifdef CONFIG_CUSTOM_KERNEL_SENSORHUB */
+	else
+	{
+#if 0//ifdef CUSTOM_KERNEL_SENSORHUB
+        acc[KXTJ2_1009_AXIS_X] = obj->data[KXTJ2_1009_AXIS_X];
+		acc[KXTJ2_1009_AXIS_Y] = obj->data[KXTJ2_1009_AXIS_Y];
+		acc[KXTJ2_1009_AXIS_Z] = obj->data[KXTJ2_1009_AXIS_Z];		
+#else
+
 /*Kionix Auto-Cali Start*/
 #ifdef KIONIX_AUTO_CAL
-		raw[0] = obj->data[KXTJ2_1009_AXIS_X];
-		raw[1] = obj->data[KXTJ2_1009_AXIS_Y];
-		raw[2] = obj->data[KXTJ2_1009_AXIS_Z];
+        raw[0]=obj->data[KXTJ2_1009_AXIS_X];
+        raw[1]=obj->data[KXTJ2_1009_AXIS_Y];
+        raw[2]=obj->data[KXTJ2_1009_AXIS_Z];
 
-		if ((abs(raw[0]) < Detection_range)
-		    && (abs(raw[1]) < Detection_range)
-		    && (abs((abs(raw[2]) - Sensitivity_def)) < ((Detection_range) + 308))) {
+        if(     (abs(raw[0]) < Detection_range)  
+            &&  (abs(raw[1]) < Detection_range) 
+            &&  (abs((abs(raw[2])- Sensitivity_def))  < ((Detection_range)+ 308)))
+        {
 
-#ifdef DEBUG_MSG_CAL
-			GSE_LOG("+++KXTJ2 Calibration Raw Data,%d,%d,%d\n", raw[0], raw[1], raw[2]);
-#endif
-			temp_zsum = 0;
-			Wave_Max = -4095;
-			Wave_Min = 4095;
+            #ifdef DEBUG_MSG_CAL
+            printk("+++KXTJ2 Calibration Raw Data,%d,%d,%d\n",raw[0],raw[1],raw[2]);
+            #endif
+            temp_zsum = 0;
+            Wave_Max =-4095;
+            Wave_Min = 4095;
+            
+            // BUF_RANGE = 1000 / acc_data.delay; **************************88 
+            //BUF_RANGE = 1000 / acceld->poll_interval ; 
+            
+            if ( BUF_RANGE > BUF_RANGE_Limit ) BUF_RANGE = BUF_RANGE_Limit; 
+                
+            //k printk("KXTJ2 Buffer Range =%d\n",BUF_RANGE);
+            
+            for (k=0; k < BUF_RANGE-1; k++) {
+                temp_zbuf[k] = temp_zbuf[k+1];
+                if (temp_zbuf[k] == 0) temp_zbuf[k] = Sensitivity_def ;
+                temp_zsum += temp_zbuf[k];
+                if (temp_zbuf[k] > Wave_Max) Wave_Max = temp_zbuf[k];
+                if (temp_zbuf[k] < Wave_Min) Wave_Min = temp_zbuf[k];
+            }
 
-			/* BUF_RANGE = 1000 / acc_data.delay; **************************88 */
-			/* BUF_RANGE = 1000 / acceld->poll_interval ; */
+            temp_zbuf[k] = raw[2]; // k=BUF_RANGE-1, update Z raw to bubber
+            temp_zsum += temp_zbuf[k];
+            if (temp_zbuf[k] > Wave_Max) Wave_Max = temp_zbuf[k];
+            if (temp_zbuf[k] < Wave_Min) Wave_Min = temp_zbuf[k];      
+            if (Wave_Max-Wave_Min < Stable_range )
+            {
+                
+                if ( temp_zsum > 0)
+                {
+                    Z_AVG[0] = temp_zsum / BUF_RANGE;
+                    //k
+    		        #ifdef DEBUG_MSG_CAL
+                    printk("+++ Z_AVG=%d\n ", Z_AVG[0]);
+                    #endif
+                }
+                else 
+                {
+                    Z_AVG[1] = temp_zsum / BUF_RANGE;
+                    //k 
+		            #ifdef DEBUG_MSG_CAL
+                    printk("--- Z_AVG=%d\n ", Z_AVG[1]);
+                    #endif
+                }
+                // printk("KXTJ2 start Z compensation Z_AVG Max Min,%d,%d,%d\n",(temp_zsum / BUF_RANGE),Wave_Max,Wave_Min);
+            }
+        }
+        else if(abs((abs(raw[2])- Sensitivity_def))  > ((Detection_range)+ 154))
+        {
+            #ifdef DEBUG_MSG_CAL
+            printk("KXTJ2 out of SPEC Raw Data,%d,%d,%d\n",raw[0],raw[1],raw[2]);
+            #endif
+        }
+        //else
+        //{
+        //    printk("KXTJ2 not in horizontal X=%d, Y=%d\n", raw[0], raw[1]);
+        //}
 
-			if (BUF_RANGE > BUF_RANGE_Limit)
-				BUF_RANGE = BUF_RANGE_Limit;
-
-			for (k = 0; k < BUF_RANGE - 1; k++) {
-				temp_zbuf[k] = temp_zbuf[k + 1];
-				if (temp_zbuf[k] == 0)
-					temp_zbuf[k] = Sensitivity_def;
-				temp_zsum += temp_zbuf[k];
-				if (temp_zbuf[k] > Wave_Max)
-					Wave_Max = temp_zbuf[k];
-				if (temp_zbuf[k] < Wave_Min)
-					Wave_Min = temp_zbuf[k];
-			}
-
-			temp_zbuf[k] = raw[2];	/* k=BUF_RANGE-1, update Z raw to bubber */
-			temp_zsum += temp_zbuf[k];
-			if (temp_zbuf[k] > Wave_Max)
-				Wave_Max = temp_zbuf[k];
-			if (temp_zbuf[k] < Wave_Min)
-				Wave_Min = temp_zbuf[k];
-			if (Wave_Max - Wave_Min < Stable_range) {
-
-				if (temp_zsum > 0) {
-					Z_AVG[0] = temp_zsum / BUF_RANGE;
-					/* k */
-#ifdef DEBUG_MSG_CAL
-					GSE_LOG("+++ Z_AVG=%d\n ", Z_AVG[0]);
-#endif
-				} else {
-					Z_AVG[1] = temp_zsum / BUF_RANGE;
-					/* k */
-#ifdef DEBUG_MSG_CAL
-					GSE_LOG("--- Z_AVG=%d\n ", Z_AVG[1]);
-#endif
-				}
-			}
-		} else if (abs((abs(raw[2]) - Sensitivity_def)) > ((Detection_range) + 154)) {
-#ifdef DEBUG_MSG_CAL
-			GSE_LOG("KXTJ2 out of SPEC Raw Data,%d,%d,%d\n", raw[0], raw[1], raw[2]);
-#endif
-		}
-
-		if (raw[2] >= 0)
-			raw[2] = raw[2] * 1024 / abs(Z_AVG[0]);	/* Gain Compensation */
-		else
-			raw[2] = raw[2] * 1024 / abs(Z_AVG[1]);	/* Gain Compensation */
-
-		/* k */
-#ifdef DEBUG_MSG_CAL
-		GSE_LOG("---After Cali,X=%d,Y=%d,Z=%d\n", raw[0], raw[1], raw[2]);
-#endif
-		obj->data[KXTJ2_1009_AXIS_X] = raw[0];
-		obj->data[KXTJ2_1009_AXIS_Y] = raw[1];
-		obj->data[KXTJ2_1009_AXIS_Z] = raw[2];
+        if ( raw[2] >=0) 
+            raw[2] = raw[2] * 1024 / abs(Z_AVG[0]); // Gain Compensation
+        else 
+            raw[2] = raw[2] * 1024 / abs(Z_AVG[1]); // Gain Compensation
+                
+        //k
+        #ifdef DEBUG_MSG_CAL
+        //printk("---KXTJ2 Calibration Raw Data,%d,%d,%d==> Z+=%d  Z-=%d \n",raw[0],raw[1],raw[2],Z_AVG[0],Z_AVG[1]);
+        printk("---After Cali,X=%d,Y=%d,Z=%d \n",raw[0],raw[1],raw[2]);
+        #endif
+        obj->data[KXTJ2_1009_AXIS_X]=raw[0];
+        obj->data[KXTJ2_1009_AXIS_Y]=raw[1];
+        obj->data[KXTJ2_1009_AXIS_Z]=raw[2];
 #endif
 /*Kionix Auto-Cali End*/
 
-	obj->data[KXTJ2_1009_AXIS_X] += obj->cali_sw[KXTJ2_1009_AXIS_X];
-	obj->data[KXTJ2_1009_AXIS_Y] += obj->cali_sw[KXTJ2_1009_AXIS_Y];
-	obj->data[KXTJ2_1009_AXIS_Z] += obj->cali_sw[KXTJ2_1009_AXIS_Z];
+		//printk("raw data x=%d, y=%d, z=%d \n",obj->data[KXTJ2_1009_AXIS_X],obj->data[KXTJ2_1009_AXIS_Y],obj->data[KXTJ2_1009_AXIS_Z]);
+		obj->data[KXTJ2_1009_AXIS_X] += obj->cali_sw[KXTJ2_1009_AXIS_X];
+		obj->data[KXTJ2_1009_AXIS_Y] += obj->cali_sw[KXTJ2_1009_AXIS_Y];
+		obj->data[KXTJ2_1009_AXIS_Z] += obj->cali_sw[KXTJ2_1009_AXIS_Z];
+		
+		//printk("cali_sw x=%d, y=%d, z=%d \n",obj->cali_sw[KXTJ2_1009_AXIS_X],obj->cali_sw[KXTJ2_1009_AXIS_Y],obj->cali_sw[KXTJ2_1009_AXIS_Z]);
+		
+		/*remap coordinate*/
+		acc[obj->cvt.map[KXTJ2_1009_AXIS_X]] = obj->cvt.sign[KXTJ2_1009_AXIS_X]*obj->data[KXTJ2_1009_AXIS_X];
+		acc[obj->cvt.map[KXTJ2_1009_AXIS_Y]] = obj->cvt.sign[KXTJ2_1009_AXIS_Y]*obj->data[KXTJ2_1009_AXIS_Y];
+		acc[obj->cvt.map[KXTJ2_1009_AXIS_Z]] = obj->cvt.sign[KXTJ2_1009_AXIS_Z]*obj->data[KXTJ2_1009_AXIS_Z];
+		//printk("cvt x=%d, y=%d, z=%d \n",obj->cvt.sign[KXTJ2_1009_AXIS_X],obj->cvt.sign[KXTJ2_1009_AXIS_Y],obj->cvt.sign[KXTJ2_1009_AXIS_Z]);
 
-	acc[obj->cvt.map[KXTJ2_1009_AXIS_X]] =
-	    obj->cvt.sign[KXTJ2_1009_AXIS_X] * obj->data[KXTJ2_1009_AXIS_X];
-	acc[obj->cvt.map[KXTJ2_1009_AXIS_Y]] =
-	    obj->cvt.sign[KXTJ2_1009_AXIS_Y] * obj->data[KXTJ2_1009_AXIS_Y];
-	acc[obj->cvt.map[KXTJ2_1009_AXIS_Z]] =
-	    obj->cvt.sign[KXTJ2_1009_AXIS_Z] * obj->data[KXTJ2_1009_AXIS_Z];
 
-	acc[KXTJ2_1009_AXIS_X] =
-	    acc[KXTJ2_1009_AXIS_X] * GRAVITY_EARTH_1000 / obj->reso->sensitivity;
-	acc[KXTJ2_1009_AXIS_Y] =
-	    acc[KXTJ2_1009_AXIS_Y] * GRAVITY_EARTH_1000 / obj->reso->sensitivity;
-	acc[KXTJ2_1009_AXIS_Z] =
-	    acc[KXTJ2_1009_AXIS_Z] * GRAVITY_EARTH_1000 / obj->reso->sensitivity;
-#endif				/* #ifdef CONFIG_CUSTOM_KERNEL_SENSORHUB */
+		//GSE_LOG("Mapped gsensor data: %d, %d, %d!\n", acc[KXTJ2_1009_AXIS_X], acc[KXTJ2_1009_AXIS_Y], acc[KXTJ2_1009_AXIS_Z]);
 
-	sprintf(buf, "%04x %04x %04x", acc[KXTJ2_1009_AXIS_X], acc[KXTJ2_1009_AXIS_Y],
-		acc[KXTJ2_1009_AXIS_Z]);
-	if (atomic_read(&obj->trace) & ADX_TRC_IOCTL)
-		GSE_LOG("gsensor data: %s!\n", buf);
+		//Out put the mg
+		//printk("mg acc=%d, GRAVITY=%d, sensityvity=%d \n",acc[KXTJ2_1009_AXIS_X],GRAVITY_EARTH_1000,obj->reso->sensitivity);
+		acc[KXTJ2_1009_AXIS_X] = acc[KXTJ2_1009_AXIS_X] * GRAVITY_EARTH_1000 / obj->reso->sensitivity;
+		acc[KXTJ2_1009_AXIS_Y] = acc[KXTJ2_1009_AXIS_Y] * GRAVITY_EARTH_1000 / obj->reso->sensitivity;
+		acc[KXTJ2_1009_AXIS_Z] = acc[KXTJ2_1009_AXIS_Z] * GRAVITY_EARTH_1000 / obj->reso->sensitivity;		
+#endif	
 
+		sprintf(buf, "%04x %04x %04x", acc[KXTJ2_1009_AXIS_X], acc[KXTJ2_1009_AXIS_Y], acc[KXTJ2_1009_AXIS_Z]);
+		if(atomic_read(&obj->trace) & ADX_TRC_IOCTL)
+		{
+			GSE_LOG("gsensor data: %s!\n", buf);
+		}
+	}
+	
 	return 0;
 }
-
 /*----------------------------------------------------------------------------*/
 static int KXTJ2_1009_ReadRawData(struct i2c_client *client, char *buf)
 {
-	struct kxtj2_1009_i2c_data *obj = (struct kxtj2_1009_i2c_data *)i2c_get_clientdata(client);
+	struct kxtj2_1009_i2c_data *obj = (struct kxtj2_1009_i2c_data*)i2c_get_clientdata(client);
 	int res = 0;
 
 	if (!buf || !client)
-		return -EINVAL;
-
-	res = KXTJ2_1009_ReadData(client, obj->data);
-	if (0 != res) {
-		GSE_ERR("I2C error: ret value=%d", res);
-		return -EIO;
+	{
+		return EINVAL;
 	}
-
-	sprintf(buf, "KXTJ2_1009_ReadRawData %04x %04x %04x", obj->data[KXTJ2_1009_AXIS_X],
-		obj->data[KXTJ2_1009_AXIS_Y], obj->data[KXTJ2_1009_AXIS_Z]);
-
-
+	
+	if(0 != (res = KXTJ2_1009_ReadData(client, obj->data)))
+	{        
+		GSE_ERR("I2C error: ret value=%d", res);
+		return EIO;
+	}
+	else
+	{
+		sprintf(buf, "KXTJ2_1009_ReadRawData %04x %04x %04x", obj->data[KXTJ2_1009_AXIS_X], 
+			obj->data[KXTJ2_1009_AXIS_Y], obj->data[KXTJ2_1009_AXIS_Z]);
+	
+	}
+	
 	return 0;
 }
 /*----------------------------------------------------------------------------*/
+
 static int KXTJ2_1009_InitSelfTest(struct i2c_client *client)
 {
 	int res = 0;

@@ -687,6 +687,12 @@ initrd=0x44000000,0x1000000 loglevel=8 androidboot.hardware=mt6735";
 			compatible = "mediatek, dsi_te_1-eint";
 			status = "disabled";
 		};
+
+		audio_switch {
+		compatible = "mediatek,audio_switch";
+	
+		};
+
 	};
 
 	bus: bus {
@@ -1795,6 +1801,15 @@ initrd=0x44000000,0x1000000 loglevel=8 androidboot.hardware=mt6735";
 			interrupts = <0 181 0x8>;
 		};
 
+		TFA9897@0x11220000 {
+			compatible = "mediatek,tfa9897";	
+			aud_ext_dacrst_gpio = <80 1>;
+			nxpws_gpio = <66 1>;
+			nxpclk_gpio = <68 1>;
+			nxpdatai_gpio = <78 1>;
+			nxpdatao_gpio = <67 1>;
+		};
+
 		flashlight:flashlight {
 			compatible = "mediatek,mt6735-flashlight";		
 		};
@@ -1850,6 +1865,7 @@ initrd=0x44000000,0x1000000 loglevel=8 androidboot.hardware=mt6735";
 	};
 
 /* sensor part */
+
 		hwmsensor@0 {
 			compatible = "mediatek,hwmsensor";
 		};

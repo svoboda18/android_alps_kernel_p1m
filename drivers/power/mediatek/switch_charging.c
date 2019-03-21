@@ -1090,7 +1090,7 @@ static void pchr_turn_on_charging(void)
 			if (batt_cust_data.ac_charger_input_current != 0)
 				g_temp_input_CC_value = batt_cust_data.ac_charger_input_current;
 			else
-				g_temp_input_CC_value = 120000;
+				g_temp_input_CC_value = batt_cust_data.ac_charger_current;
 
 			g_temp_CC_value = batt_cust_data.ac_charger_current;
 			battery_log(BAT_LOG_FULL,

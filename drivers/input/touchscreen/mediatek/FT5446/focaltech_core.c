@@ -638,7 +638,6 @@ static int tpd_touchinfo(struct touch_info *cinfo, struct touch_info *pinfo)
 	}
 	*/
 	/* Device Mode[2:0] == 0 :Normal operating Mode*/
-	printk("[fts]touchinfo enter\n");
 	if ((data[0] & 0x70) != 0)
 		return false;
 
@@ -651,7 +650,6 @@ static int tpd_touchinfo(struct touch_info *cinfo, struct touch_info *pinfo)
 
 	/*get the number of the touch points*/
 	point_num = data[2] & 0x0f;
-	printk("[fts]Number of touch points = %d\n", cinfo->count);
 
 	up_count =0;
 	touch_point = 0;
@@ -953,7 +951,6 @@ static int touch_event_handler(void *unused)
 				printk("[FTS][Touch] read value fail");
 				//return ret;
 			}
-				printk("[FTS]tpd fts_read_Gestruedata state=%d\n",state);
 		     	if(state ==1)
 		     	{
 			        fts_read_Gestruedata();
