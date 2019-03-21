@@ -942,21 +942,21 @@ static int KXTJ2_1009_ReadSensorData(struct i2c_client *client, char *buf, int b
         //printk("---KXTJ2 Calibration Raw Data,%d,%d,%d==> Z+=%d  Z-=%d \n",raw[0],raw[1],raw[2],Z_AVG[0],Z_AVG[1]);
         printk("---After Cali,X=%d,Y=%d,Z=%d \n",raw[0],raw[1],raw[2]);
         #endif
-        obj->data[KXTJ2_1009_AXIS_X]=raw[0];
+        obj->data[KXTJ2_1009_AXIS_X]=abs(raw[0]);
         obj->data[KXTJ2_1009_AXIS_Y]=raw[1];
         obj->data[KXTJ2_1009_AXIS_Z]=raw[2];
 #endif
 /*Kionix Auto-Cali End*/
 
 		//printk("raw data x=%d, y=%d, z=%d \n",obj->data[KXTJ2_1009_AXIS_X],obj->data[KXTJ2_1009_AXIS_Y],obj->data[KXTJ2_1009_AXIS_Z]);
-		obj->data[KXTJ2_1009_AXIS_X] += obj->cali_sw[KXTJ2_1009_AXIS_X];
+		obj->data[KXTJ2_1009_AXIS_X] += abs(obj->cali_sw[KXTJ2_1009_AXIS_X]);
 		obj->data[KXTJ2_1009_AXIS_Y] += obj->cali_sw[KXTJ2_1009_AXIS_Y];
 		obj->data[KXTJ2_1009_AXIS_Z] += obj->cali_sw[KXTJ2_1009_AXIS_Z];
 		
 		//printk("cali_sw x=%d, y=%d, z=%d \n",obj->cali_sw[KXTJ2_1009_AXIS_X],obj->cali_sw[KXTJ2_1009_AXIS_Y],obj->cali_sw[KXTJ2_1009_AXIS_Z]);
 		
 		/*remap coordinate*/
-		acc[obj->cvt.map[KXTJ2_1009_AXIS_X]] = obj->cvt.sign[KXTJ2_1009_AXIS_X]*obj->data[KXTJ2_1009_AXIS_X];
+		acc[obj->cvt.map[KXTJ2_1009_AXIS_X]] = abs(obj->cvt.sign[KXTJ2_1009_AXIS_X]*obj->data[KXTJ2_1009_AXIS_X]);
 		acc[obj->cvt.map[KXTJ2_1009_AXIS_Y]] = obj->cvt.sign[KXTJ2_1009_AXIS_Y]*obj->data[KXTJ2_1009_AXIS_Y];
 		acc[obj->cvt.map[KXTJ2_1009_AXIS_Z]] = obj->cvt.sign[KXTJ2_1009_AXIS_Z]*obj->data[KXTJ2_1009_AXIS_Z];
 		//printk("cvt x=%d, y=%d, z=%d \n",obj->cvt.sign[KXTJ2_1009_AXIS_X],obj->cvt.sign[KXTJ2_1009_AXIS_Y],obj->cvt.sign[KXTJ2_1009_AXIS_Z]);
@@ -966,7 +966,7 @@ static int KXTJ2_1009_ReadSensorData(struct i2c_client *client, char *buf, int b
 
 		//Out put the mg
 		//printk("mg acc=%d, GRAVITY=%d, sensityvity=%d \n",acc[KXTJ2_1009_AXIS_X],GRAVITY_EARTH_1000,obj->reso->sensitivity);
-		acc[KXTJ2_1009_AXIS_X] = acc[KXTJ2_1009_AXIS_X] * GRAVITY_EARTH_1000 / obj->reso->sensitivity;
+		acc[KXTJ2_1009_AXIS_X] = abs(acc[KXTJ2_1009_AXIS_X] * GRAVITY_EARTH_1000 / obj->reso->sensitivity);
 		acc[KXTJ2_1009_AXIS_Y] = acc[KXTJ2_1009_AXIS_Y] * GRAVITY_EARTH_1000 / obj->reso->sensitivity;
 		acc[KXTJ2_1009_AXIS_Z] = acc[KXTJ2_1009_AXIS_Z] * GRAVITY_EARTH_1000 / obj->reso->sensitivity;		
 #endif	
@@ -1545,10 +1545,8 @@ static ssize_t show_register_value(struct device_driver *ddri, char *buf)
 
 }
 
-
 static DRIVER_ATTR(i2c, S_IWUSR | S_IRUGO, show_register_value, store_register_value);
 static DRIVER_ATTR(register, S_IWUSR | S_IRUGO, show_register, store_register);
-
 
 /*----------------------------------------------------------------------------*/
 static struct driver_attribute *kxtj2_1009_attr_list[] = {
@@ -1704,8 +1702,6 @@ static int gsensor_setup_irq(void)
 {
 	int err = 0;
 
-
-
 	err = SCP_sensorHub_rsp_registration(ID_ACCELEROMETER, gsensor_irq_handler);
 
 	return err;
@@ -1779,8 +1775,6 @@ static int gsensor_enable_nodata(int en)
 {
 	int err = 0;
 
-
-
 	if (((en == 0) && (sensor_power == false)) || ((en == 1) && (sensor_power == true))) {
 		enable_status = sensor_power;
 		GSE_LOG("Gsensor device have updated!\n");
@@ -1819,7 +1813,7 @@ static int gsensor_set_batch(int flag, int64_t samplingPeriodNs, int64_t maxBatc
 
 	value = (int)samplingPeriodNs/1000/1000;
 	/*Fix Me*/
-	GSE_LOG("bma22e set delay = (%d) OK!\n", value);
+	GSE_LOG("KXTJ2_1009 set delay = (%d) OK!\n", value);
 
 	return 0;
 
@@ -1918,7 +1912,7 @@ static int gsensor_get_data(int *x, int *y, int *z, int *status)
 		return req.get_data_rsp.errCode;
 	}
 
-	*x = (int)req.get_data_rsp.int16_Data[0] * GRAVITY_EARTH_1000 / 1000;
+	*x = abs((int)req.get_data_rsp.int16_Data[0] * GRAVITY_EARTH_1000 / 1000);
 	*y = (int)req.get_data_rsp.int16_Data[1] * GRAVITY_EARTH_1000 / 1000;
 	*z = (int)req.get_data_rsp.int16_Data[2] * GRAVITY_EARTH_1000 / 1000;
 	GSE_ERR("x = %d, y = %d, z = %d\n", *x, *y, *z);
